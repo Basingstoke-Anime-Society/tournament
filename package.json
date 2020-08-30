@@ -1,0 +1,22 @@
+{
+  "name": "tournament",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Basingstoke-Anime-Society/tournament.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Basingstoke-Anime-Society/tournament/issues"
+  },
+  "homepage": "https://github.com/Basingstoke-Anime-Society/tournament#readme",
+  "dependencies": {
+    "bootstrap": "^4.5.2"
+  }
+}
