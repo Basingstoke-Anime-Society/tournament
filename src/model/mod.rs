@@ -150,11 +150,8 @@ impl Tournament {
         }
 
         let left = self.next_lowest_pick(anime.clone())?;
-        println!("Left: {}", left);
-
         anime.retain(|a| *a != left);
         let right = self.next_lowest_pick(anime)?;
-        println!("Right: {}", right);
 
         Some(Decision{
             left: left,
