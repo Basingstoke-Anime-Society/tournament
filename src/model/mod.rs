@@ -1,7 +1,6 @@
 use std::collections::HashMap;
-use std::cmp::Ordering;
 
-use rand::{thread_rng, Rng};
+use rand::{thread_rng};
 use rand::seq::SliceRandom;
 
 
@@ -26,17 +25,15 @@ pub struct Anime {
     pub id: i32,
     pub name: String,
     pub episodes: i32,
-    pub slot1: bool,
-    pub slot2: bool,
-    pub slot3: bool,
+    pub slot: [bool;3],
 }
 
 impl Anime {
     pub fn matches_slot(&self, slot: &Slot) -> bool {
         match slot {
-            Slot::First => self.slot1,
-            Slot::Second => self.slot2,
-            Slot::Third => self.slot3
+            Slot::First => self.slot[0],
+            Slot::Second => self.slot[1],
+            Slot::Third => self.slot[2]
         }
     }
 }
@@ -104,52 +101,45 @@ impl Tournament {
 
     // find the anime with the fewest picks
     fn next_lowest_pick(&self, anime: Vec<i32>) -> Option<i32> {
-        // println!("    Picking next anime: {:?}", anime);
-        
-        // println!(" -> Decisions: {:?}", self.decisions);
-        let mut picks: Vec<i32> = self.decisions.iter().flat_map(|decision| {
+        let picks: Vec<i32> = self.decisions.iter().flat_map(|decision| {
             match decision.pick {
                 Pick::Left => Some(decision.left),
                 Pick::Right => Some(decision.right),
                 Pick::Undecided => None
             }
         }).collect();
-        // println!(" -> Picks: {:?}", picks);
 
         let mut num_decisions: HashMap<i32, i32> = HashMap::new();
         for anime in &anime {
             num_decisions.insert(*anime, 0);
         }
-        // println!(" -> Decisions pre-fill {:?}", num_decisions);
 
         for pick in picks {
-            match num_decisions.get(&pick) {
-                Some(num) => num_decisions.insert(pick, num + 1),
-                None => None
+            let num = match num_decisions.get(&pick) {
+                Some(num) => num + 1,
+                None => 0
             };
+
+            if num > 0 {
+                num_decisions.insert(pick, num);
+            }
         }
-        // println!(" -> Decisions {:?}", num_decisions);
 
         let lowest_pick_num: i32 = {
             let mut lowest = 1000;
             for pick_num in num_decisions.values() {
-                // println!("{:?}", pick_num);
                 if *pick_num < lowest {
                     lowest = *pick_num;   
                 }
             }
             lowest
         };
-        // println!(" -> Lowest pick num: {}", lowest_pick_num);
 
         let lowest_pick_anime: Vec<i32> = anime.iter().filter(|a| num_decisions[*a] == lowest_pick_num).map(|a| *a).collect();
-        
-        // println!(" -> Lowest pick anime: {:?}", lowest_pick_anime);
         
         // None
         let mut rng = thread_rng();
         let pick = lowest_pick_anime.choose(&mut rng).map(|a| *a);
-        // println!(" -> Pick: {:?}", pick);
         pick
     }
 
@@ -163,7 +153,6 @@ impl Tournament {
         println!("Left: {}", left);
 
         anime.retain(|a| *a != left);
-        // println!(" -> Remaining anime: {:?}", anime);
         let right = self.next_lowest_pick(anime)?;
         println!("Right: {}", right);
 
@@ -186,4 +175,14 @@ impl Tournament {
 
         anime.first().map(|a| *a)
     }
+}
+
+pub trait TournamentModel {
+    fn add_anime(&mut self, anime: Anime);
+    
+    fn get_anime(&self) -> Vec<Anime>;
+
+    fn get_anime_by_id(&self, id: i32) -> Option<Anime>;
+
+    fn get_anime_for_slot(&self, slot: Slot) -> Vec<Anime>;
 }

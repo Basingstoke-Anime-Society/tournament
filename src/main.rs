@@ -5,6 +5,7 @@ use model::*;
 use mock::*;
 
 use rand::{thread_rng, Rng};
+use dialoguer::Input;
 
 fn main() {
     // start with a mock model
