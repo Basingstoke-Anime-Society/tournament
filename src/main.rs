@@ -1,48 +1,61 @@
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
+
 mod model;
-mod mock;
 
 use model::*;
+use model::models::*;
+// use diesel::prelude::*;
+
+/*
+mod model;
+use model::*;
+
+mod mock;
 use mock::*;
+*/
 
 use dialoguer::Input;
 
-fn main() {
-    // start with a mock model
-    let mut model = MockModel::new();
-    model.add_mock_anime();
 
-    // make a tournament
-    let items = model.get_anime_for_slot(Slot::First);
-    let len = items.len();
-    let mut tournament = Tournament {
-        slot: Slot::First,
-        items: items,
-        decisions: Vec::with_capacity(len)
-    };
-    let slot = tournament.slot.name();
-    println!("Tournament has {} anime for {} slot", tournament.items.len(), slot);
+fn main() {
+    let model = Model::connect();
+    
+    // let items = model.get_anime_for_slot(Slot::First);
+    let tournament = model.add_tournament(Slot::First);
+    let items = model.get_tournament_anime(&tournament);
+    println!("Tournament #{} has {} anime for {} slot", tournament.id, items.len(), "first");
+
+
+    if !model.is_tournament_finished(&tournament) {
+        println!("Not yet!");
+    }
+
 
     // run the tournament
-    while !tournament.is_finished() {
-        let decision = tournament.next_decision();
+    while !model.is_tournament_finished(&tournament) {
+        let decision = model.next_tournament_decision(&tournament);
         match decision {
             Some(mut decision) => {
-                let left = model.get_anime_by_id(decision.left).unwrap();
-                let right = model.get_anime_by_id(decision.right).unwrap();
+                let left = model.get_anime_by_id(decision.left_anime).unwrap();
+                let right = model.get_anime_by_id(decision.right_anime).unwrap();
 
-                decision.pick = ask_pick(left.name, right.name);
+                decision.pick = Pick::to_opt(ask_pick(left.name, right.name));
 
-                println!(" => {}", decision.pick.name());
+                println!(" => {}", Pick::to_pick(decision.pick).name());
                 
-                tournament.add_decision(decision);
+                model.save_tournament_decision(&tournament, decision);
             },
             None => ()
         }
     }
-    let winner = tournament.get_winner().unwrap();
+    let winner = model.get_tournament_winner(&tournament).unwrap();
     let winner_anime = model.get_anime_by_id(winner).unwrap();
     println!("WINNER: {}", winner_anime.name);
+    
 }
+
 
 fn ask_pick(left: String, right: String) -> Pick {
     println!("Decision: {} vs {}", left, right);
